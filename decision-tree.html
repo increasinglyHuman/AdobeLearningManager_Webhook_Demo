@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datopolis Integration Decision Tree</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        
+        .decision-node {
+            background: #fff;
+            border: 3px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .decision-node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .question {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .option-btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .option-btn:hover {
+            background: #e9ecef;
+            border-color: #999;
+        }
+        
+        .option-btn.selected {
+            background: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 3px solid #28a745;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .character {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .character-icon {
+            width: 80px;
+            height: 80px;
+            filter: invert(1);
+        }
+        
+        .character-info h3 {
+            margin: 0 0 10px 0;
+            color: #28a745;
+            font-size: 24px;
+        }
+        
+        .character-info p {
+            margin: 0;
+            color: #666;
+        }
+        
+        .use-cases {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .use-cases h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .use-cases ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        
+        .reset-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 12px 30px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .path-taken {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .path-taken.show {
+            display: block;
+        }
+        
+        .path-taken h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+        
+        .path-step {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #fff;
+            border: 1px solid #1976d2;
+            border-radius: 4px;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏙️ Datopolis Integration Decision Tree</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 40px;">
+            Answer the questions to find which friend in Datopolis can help you best!
+        </p>
+        
+        <div id="decisionTree">
+            <!-- Question 1 -->
+            <div class="decision-node" id="q1">
+                <div class="question">What kind of integration need do you have?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q1', 'data', 'q2')">
+                        📊 I need to work with data
+                    </button>
+                    <button class="option-btn" onclick="answer('q1', 'system', 'q5')">
+                        🔗 I need to connect systems
+                    </button>
+                    <button class="option-btn" onclick="answer('q1', 'access', 'resultAppleberry')">
+                        🔑 I need access/permissions
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Question 2 -->
+            <div class="decision-node hidden" id="q2">
+                <div class="question">How do you want to receive the data?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q2', 'request', 'q3')">
+                        🙋 I'll ask for it when needed
+                    </button>
+                    <button class="option-btn" onclick="answer('q2', 'push', 'q4')">
+                        📬 Send it to me when something happens
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Question 3 -->
+            <div class="decision-node hidden" id="q3">
+                <div class="question">How often will you request data?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q3', 'occasional', 'resultAppy')">
+                        ⏰ Occasionally (hourly/daily)
+                    </button>
+                    <button class="option-btn" onclick="answer('q3', 'frequent', 'resultAppyWarning')">
+                        ⚡ Very frequently (every few seconds)
+                    </button>
+                    <button class="option-btn" onclick="answer('q3', 'ondemand', 'resultAppy')">
+                        👆 Only when users request it
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Question 4 -->
+            <div class="decision-node hidden" id="q4">
+                <div class="question">What kind of events do you need to know about?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q4', 'completion', 'resultWebby')">
+                        ✅ Completions/Enrollments
+                    </button>
+                    <button class="option-btn" onclick="answer('q4', 'progress', 'resultWebby')">
+                        📈 Progress updates
+                    </button>
+                    <button class="option-btn" onclick="answer('q4', 'admin', 'resultWebby')">
+                        👨‍💼 Admin actions
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Question 5 -->
+            <div class="decision-node hidden" id="q5">
+                <div class="question">What kind of system integration?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q5', 'standard', 'q6')">
+                        📦 Standard systems (CRM, HRIS, etc.)
+                    </button>
+                    <button class="option-btn" onclick="answer('q5', 'custom', 'q7')">
+                        🛠️ Custom/proprietary system
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Question 6 -->
+            <div class="decision-node hidden" id="q6">
+                <div class="question">Does ALM have a pre-built connector for your system?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q6', 'yes', 'resultConner')">
+                        ✅ Yes, it's listed
+                    </button>
+                    <button class="option-btn" onclick="answer('q6', 'no', 'resultNatty')">
+                        ❌ No pre-built connector
+                    </button>
+                    <button class="option-btn" onclick="answer('q6', 'unsure', 'resultCheck')">
+                        🤔 I'm not sure
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Question 7 -->
+            <div class="decision-node hidden" id="q7">
+                <div class="question">What are your performance requirements?</div>
+                <div class="options">
+                    <button class="option-btn" onclick="answer('q7', 'critical', 'resultNatty')">
+                        🚀 Mission-critical performance
+                    </button>
+                    <button class="option-btn" onclick="answer('q7', 'standard', 'resultNattyOrAppy')">
+                        📊 Standard performance is fine
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Path Taken Display -->
+        <div class="path-taken" id="pathDisplay">
+            <h4>Your Decision Path:</h4>
+            <div id="pathSteps"></div>
+        </div>
+        
+        <!-- Results -->
+        <div class="result hidden" id="resultAppy">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/gear.svg" class="character-icon" alt="Appy API">
+                <div class="character-info">
+                    <h3>You need Appy API! 📚</h3>
+                    <p>The city librarian who answers your questions when you ask them.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Perfect for:</h4>
+                <ul>
+                    <li>Fetching current enrollment data</li>
+                    <li>Getting user progress reports</li>
+                    <li>Retrieving course catalogs</li>
+                    <li>On-demand data queries</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultAppyWarning">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/lightbulb.svg" class="character-icon" alt="Webby">
+                <div class="character-info">
+                    <h3>⚠️ Consider Webby Webhook instead! 💡</h3>
+                    <p>Polling Appy API every few seconds is inefficient. Webby can push updates instantly!</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Why webhooks are better here:</h4>
+                <ul>
+                    <li>No constant polling needed</li>
+                    <li>Instant notifications</li>
+                    <li>Much more efficient</li>
+                    <li>Reduces server load</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultWebby">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/lightbulb.svg" class="character-icon" alt="Webby">
+                <div class="character-info">
+                    <h3>You need Webby Webhook! 💡</h3>
+                    <p>The city messenger who delivers news to your door instantly.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Perfect for:</h4>
+                <ul>
+                    <li>Real-time completion notifications</li>
+                    <li>Instant enrollment alerts</li>
+                    <li>Progress milestone updates</li>
+                    <li>System event notifications</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultNatty">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/atomic.svg" class="character-icon" alt="Natty">
+                <div class="character-info">
+                    <h3>You need Natty Native-Extension! ⚛️</h3>
+                    <p>The master craftsperson who builds custom tools perfectly suited to your system.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Perfect for:</h4>
+                <ul>
+                    <li>High-performance integrations</li>
+                    <li>Custom business logic</li>
+                    <li>System-specific optimizations</li>
+                    <li>Complex data transformations</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultConner">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/infinity.svg" class="character-icon" alt="Conner">
+                <div class="character-info">
+                    <h3>You need Conner Connector! ♾️</h3>
+                    <p>The city translator who speaks every system's language.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Perfect for:</h4>
+                <ul>
+                    <li>Salesforce synchronization</li>
+                    <li>HRIS data exchange</li>
+                    <li>Standard system integrations</li>
+                    <li>Pre-built data mappings</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultAppleberry">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/bento.svg" class="character-icon" alt="Appleberry">
+                <div class="character-info">
+                    <h3>You need Appleberry Application! 🍱</h3>
+                    <p>The Key Master who grants access to all the other friends.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Start here to:</h4>
+                <ul>
+                    <li>Get API keys (library cards)</li>
+                    <li>Set up authentication</li>
+                    <li>Configure permissions</li>
+                    <li>Enable integrations</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultCheck">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/infinity.svg" class="character-icon" alt="Check">
+                <div class="character-info">
+                    <h3>Check Available Connectors 🔍</h3>
+                    <p>Look for your system in ALM's connector catalog first.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Common pre-built connectors:</h4>
+                <ul>
+                    <li>Salesforce</li>
+                    <li>Microsoft Teams</li>
+                    <li>Slack</li>
+                    <li>Various HRIS systems</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;">
+                    If available, use <strong>Conner Connector</strong>. If not, build with <strong>Natty Native-Extension</strong>.
+                </p>
+            </div>
+        </div>
+        
+        <div class="result hidden" id="resultNattyOrAppy">
+            <div class="character">
+                <img src="../ALM-Kawaii-Quiz/icons/atomic.svg" class="character-icon" alt="Choice">
+                <div class="character-info">
+                    <h3>You have options! 🤔</h3>
+                    <p>Either approach could work for your needs.</p>
+                </div>
+            </div>
+            <div class="use-cases">
+                <h4>Choose based on:</h4>
+                <ul>
+                    <li><strong>Natty Native-Extension</strong> if you need custom logic or transformations</li>
+                    <li><strong>Appy API + Middleware</strong> if you prefer a loosely-coupled approach</li>
+                    <li><strong>Combination</strong> for complex scenarios</li>
+                </ul>
+            </div>
+        </div>
+        
+        <button class="reset-btn" onclick="resetTree()">Start Over</button>
+    </div>
+    
+    <script>
+        const decisions = [];
+        const decisionLabels = {
+            'data': '📊 Work with data',
+            'system': '🔗 Connect systems',
+            'access': '🔑 Need access',
+            'request': '🙋 Request when needed',
+            'push': '📬 Push notifications',
+            'occasional': '⏰ Occasional requests',
+            'frequent': '⚡ Frequent polling',
+            'ondemand': '👆 On-demand',
+            'completion': '✅ Completions',
+            'progress': '📈 Progress',
+            'admin': '👨‍💼 Admin actions',
+            'standard': '📦 Standard systems',
+            'custom': '🛠️ Custom system',
+            'yes': '✅ Has connector',
+            'no': '❌ No connector',
+            'unsure': '🤔 Not sure',
+            'critical': '🚀 High performance',
+            'standard': '📊 Standard performance'
+        };
+        
+        function answer(currentQ, choice, nextId) {
+            // Record the decision
+            decisions.push(decisionLabels[choice] || choice);
+            
+            // Hide current question
+            document.getElementById(currentQ).classList.add('hidden');
+            
+            // Show next question or result
+            document.getElementById(nextId).classList.remove('hidden');
+            if (nextId.startsWith('result')) {
+                document.getElementById(nextId).classList.add('show');
+                showPath();
+            }
+        }
+        
+        function showPath() {
+            const pathDisplay = document.getElementById('pathDisplay');
+            const pathSteps = document.getElementById('pathSteps');
+            
+            pathSteps.innerHTML = decisions.map(step => 
+                `<span class="path-step">${step}</span>`
+            ).join(' → ');
+            
+            pathDisplay.classList.add('show');
+        }
+        
+        function resetTree() {
+            // Reset decisions
+            decisions.length = 0;
+            
+            // Hide all questions and results
+            document.querySelectorAll('.decision-node, .result').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('show');
+            });
+            
+            // Hide path display
+            document.getElementById('pathDisplay').classList.remove('show');
+            
+            // Show first question
+            document.getElementById('q1').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

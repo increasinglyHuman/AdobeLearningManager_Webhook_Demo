@@ -1,0 +1,41 @@
+# Logs
+*.log
+logs/
+webhook-errors.log
+webhook-raw.log
+
+# Database
+*.db
+*.sqlite
+data/
+
+# Environment
+.env
+.env.local
+config.php
+
+# Dependencies
+vendor/
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SSH Keys (NEVER commit these!)
+*.pem
+*.key
+ssh/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+tmp/
+temp/

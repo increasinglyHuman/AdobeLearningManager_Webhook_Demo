@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datopolis Integration Decision Tree - Developer Mode</title>
+    <style>
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            overflow-x: auto;
+        }
+        
+        .container {
+            min-width: 1400px;
+            margin: 0 auto;
+            background: #111111;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
+            border: 1px solid #222;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ffff;
+            margin-bottom: 20px;
+            font-size: 32px;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        
+        .instructions {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .tree-container {
+            position: relative;
+            min-height: 800px;
+            background: #0d0d0d;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #1a1a1a;
+        }
+        
+        /* Nodes */
+        .node {
+            position: absolute;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            width: 240px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .node.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+        }
+        
+        .node.active {
+            border-color: #00ffff;
+            background: #001a1a;
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+        
+        .node.decision {
+            background: #1a1a0d;
+            border-color: #444422;
+        }
+        
+        .node.decision.active {
+            background: #1a2a1a;
+            border-color: #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+        
+        .node.result {
+            background: #0d1a1a;
+            border-color: #00ff88;
+        }
+        
+        .node.result.active {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+        }
+        
+        .node-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .node.active .node-title {
+            color: #00ffff;
+        }
+        
+        .node.result.active .node-title {
+            color: #000;
+        }
+        
+        /* Toggle Switches */
+        .toggle-group {
+            margin-top: 10px;
+        }
+        
+        .toggle-option {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .toggle-option:hover {
+            background: #222;
+            border-color: #444;
+        }
+        
+        .toggle-option input[type="radio"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #00ffff;
+        }
+        
+        .toggle-option label {
+            cursor: pointer;
+            font-size: 13px;
+            color: #ccc;
+            flex: 1;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .node.active .toggle-option label {
+            color: #fff;
+        }
+        
+        /* Connections */
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: #333;
+            transition: all 0.3s ease;
+            transform-origin: left center;
+        }
+        
+        .connection.active {
+            background: #00ffff;
+            height: 3px;
+            z-index: 5;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .connection.result-line.active {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        /* Arrow heads */
+        .arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 0 8px 12px;
+            border-color: transparent transparent transparent #333;
+            transition: all 0.3s ease;
+        }
+        
+        .arrow.active {
+            border-color: transparent transparent transparent #00ffff;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5));
+        }
+        
+        .arrow.result-arrow.active {
+            border-color: transparent transparent transparent #00ff88;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.5));
+        }
+        
+        /* Character Results */
+        .character-icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 12px;
+        }
+        
+        .node.result.active .character-icon {
+            filter: invert(1);
+        }
+        
+        .result-name {
+            font-weight: 700;
+            color: #00ff88;
+            margin-bottom: 8px;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+        
+        .node.result.active .result-name {
+            color: #000;
+        }
+        
+        .result-desc {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .node.result.active .result-desc {
+            color: #000;
+        }
+        
+        /* Current Path Display */
+        .current-path {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            padding: 20px 40px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            max-width: 80%;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        .current-path h3 {
+            margin: 0 0 15px 0;
+            color: #00ffff;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 400;
+        }
+        
+        .path-step {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #002a2a;
+            border: 1px solid #00ffff;
+            border-radius: 6px;
+            margin: 0 8px 8px 0;
+            font-size: 13px;
+            color: #00ffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Legend */
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 12px;
+        }
+        
+        .legend-title {
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 11px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .legend-box {
+            width: 24px;
+            height: 24px;
+            border: 2px solid;
+            border-radius: 6px;
+            margin-right: 12px;
+        }
+        
+        /* Glow animations */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+        }
+        
+        .node.active {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Grid background pattern */
+        .tree-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            border-radius: 12px;
+        }
+        
+        /* Use Case Panel */
+        .use-case-panel {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1a1a1a;
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            max-width: 400px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        .use-case-panel h3 {
+            margin: 0 0 15px 0;
+            color: #00ff88;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 400;
+        }
+        
+        .use-case {
+            background: #0d1a0d;
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #ccc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .use-case code {
+            color: #00ffff;
+            background: #002a2a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DATOPOLIS INTEGRATION DECISION TREE</h1>
+        <p class="instructions">
+            Toggle switches to explore integration paths • Watch your decision path illuminate
+        </p>
+        
+        <div class="tree-container" id="treeContainer">
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-title">Legend</div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #1a1a0d; border-color: #444422;"></div>
+                    <span>Decision Point</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #0d1a1a; border-color: #00ff88;"></div>
+                    <span>Solution</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #001a1a; border-color: #00ffff;"></div>
+                    <span>Active Path</span>
+                </div>
+            </div>
+            
+            <!-- Start Node -->
+            <div class="node decision active" id="start" style="top: 50px; left: 50px;">
+                <div class="node-title">🏁 Integration Need</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="start" id="start-data" value="data" onchange="updatePath()">
+                        <label for="start-data">📊 Work with data</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="start" id="start-system" value="system" onchange="updatePath()">
+                        <label for="start-system">🔗 Connect systems</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="start" id="start-access" value="access" onchange="updatePath()">
+                        <label for="start-access">🔑 Need access</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Branch -->
+            <div class="node decision" id="data-flow" style="top: 50px; left: 350px;">
+                <div class="node-title">📊 Data Flow</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="data-flow" id="flow-pull" value="pull" onchange="updatePath()">
+                        <label for="flow-pull">🙋 Pull (request)</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="data-flow" id="flow-push" value="push" onchange="updatePath()">
+                        <label for="flow-push">📬 Push (events)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pull Branch -->
+            <div class="node decision" id="pull-frequency" style="top: 50px; left: 650px;">
+                <div class="node-title">⏰ Request Frequency</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="pull-freq" id="freq-low" value="low" onchange="updatePath()">
+                        <label for="freq-low">🐌 Low (hourly+)</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="pull-freq" id="freq-high" value="high" onchange="updatePath()">
+                        <label for="freq-high">⚡ High (seconds)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Push Branch -->
+            <div class="node decision" id="push-events" style="top: 200px; left: 650px;">
+                <div class="node-title">📬 Event Types</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="push-event" id="event-complete" value="complete" onchange="updatePath()">
+                        <label for="event-complete">✅ Completions</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="push-event" id="event-progress" value="progress" onchange="updatePath()">
+                        <label for="event-progress">📈 Progress</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Branch -->
+            <div class="node decision" id="system-type" style="top: 350px; left: 350px;">
+                <div class="node-title">🔗 System Type</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="sys-type" id="sys-standard" value="standard" onchange="updatePath()">
+                        <label for="sys-standard">📦 Standard (CRM/HRIS)</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="sys-type" id="sys-custom" value="custom" onchange="updatePath()">
+                        <label for="sys-custom">🛠️ Custom/Proprietary</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Connector Check -->
+            <div class="node decision" id="connector-check" style="top: 350px; left: 650px;">
+                <div class="node-title">🔍 Connector Exists?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="connector" id="conn-yes" value="yes" onchange="updatePath()">
+                        <label for="conn-yes">✅ Yes</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="connector" id="conn-no" value="no" onchange="updatePath()">
+                        <label for="conn-no">❌ No</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Branch -->
+            <div class="node decision" id="performance" style="top: 500px; left: 650px;">
+                <div class="node-title">🚀 Performance</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="perf" id="perf-critical" value="critical" onchange="updatePath()">
+                        <label for="perf-critical">🏎️ Critical</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="perf" id="perf-standard" value="standard" onchange="updatePath()">
+                        <label for="perf-standard">🚗 Standard</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div class="node result" id="result-appy" style="top: 50px; left: 980px;">
+                <img src="../ALM-Kawaii-Quiz/icons/gear.svg" class="character-icon" alt="Appy">
+                <div class="result-name">APPY API</div>
+                <div class="result-desc">RESTful data on demand</div>
+            </div>
+            
+            <div class="node result" id="result-webby" style="top: 200px; left: 980px;">
+                <img src="../ALM-Kawaii-Quiz/icons/lightbulb.svg" class="character-icon" alt="Webby">
+                <div class="result-name">WEBBY WEBHOOK</div>
+                <div class="result-desc">Event-driven push notifications</div>
+            </div>
+            
+            <div class="node result" id="result-natty" style="top: 350px; left: 980px;">
+                <img src="../ALM-Kawaii-Quiz/icons/atomic.svg" class="character-icon" alt="Natty">
+                <div class="result-name">NATTY NATIVE-EXT</div>
+                <div class="result-desc">High-performance custom code</div>
+            </div>
+            
+            <div class="node result" id="result-conner" style="top: 500px; left: 980px;">
+                <img src="../ALM-Kawaii-Quiz/icons/infinity.svg" class="character-icon" alt="Conner">
+                <div class="result-name">CONNER CONNECTOR</div>
+                <div class="result-desc">Pre-built integrations</div>
+            </div>
+            
+            <div class="node result" id="result-appleberry" style="top: 650px; left: 350px;">
+                <img src="../ALM-Kawaii-Quiz/icons/bento.svg" class="character-icon" alt="Appleberry">
+                <div class="result-name">APPLEBERRY APP</div>
+                <div class="result-desc">API keys & authentication</div>
+            </div>
+            
+            <!-- Connections will be drawn dynamically -->
+        </div>
+        
+        <!-- Current Path Display -->
+        <div class="current-path" id="currentPath" style="display: none;">
+            <h3>Decision Path</h3>
+            <div id="pathDisplay"></div>
+        </div>
+        
+        <!-- Use Case Examples -->
+        <div class="use-case-panel" id="useCasePanel" style="display: none;">
+            <h3>Example Use Cases</h3>
+            <div id="useCaseContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Use case examples for each solution
+        const useCases = {
+            'result-appy': [
+                'Fetch user progress: <code>GET /api/progress/{userId}</code>',
+                'List enrolled courses: <code>GET /api/enrollments</code>',
+                'Download completion report on-demand',
+                'Dashboard refresh button pulls latest data'
+            ],
+            'result-webby': [
+                'Send Slack message when course completed',
+                'Update CRM when user enrolls',
+                'Trigger certificate generation on completion',
+                'Real-time progress bar updates'
+            ],
+            'result-natty': [
+                'Custom SSO integration with proprietary auth',
+                'High-speed bulk data processing',
+                'Complex business rule engine',
+                'Real-time video analytics integration'
+            ],
+            'result-conner': [
+                'Sync completions to Salesforce',
+                'Import users from Workday HRIS',
+                'Export data to Microsoft Teams',
+                'Connect to standard BI tools'
+            ],
+            'result-appleberry': [
+                'Generate API keys for new integration',
+                'Set up OAuth2 authentication',
+                'Configure webhook endpoints',
+                'Manage integration permissions'
+            ]
+        };
+        
+        // Connection definitions
+        const connections = [
+            // Start to branches
+            {from: 'start', to: 'data-flow', condition: () => getSelection('start') === 'data'},
+            {from: 'start', to: 'system-type', condition: () => getSelection('start') === 'system'},
+            {from: 'start', to: 'result-appleberry', condition: () => getSelection('start') === 'access', result: true},
+            
+            // Data flow branches
+            {from: 'data-flow', to: 'pull-frequency', condition: () => getSelection('data-flow') === 'pull'},
+            {from: 'data-flow', to: 'push-events', condition: () => getSelection('data-flow') === 'push'},
+            
+            // Pull frequency to results
+            {from: 'pull-frequency', to: 'result-appy', condition: () => getSelection('pull-freq') === 'low', result: true},
+            {from: 'pull-frequency', to: 'result-webby', condition: () => getSelection('pull-freq') === 'high', result: true},
+            
+            // Push events to result
+            {from: 'push-events', to: 'result-webby', condition: () => getSelection('push-event') !== '', result: true},
+            
+            // System branches
+            {from: 'system-type', to: 'connector-check', condition: () => getSelection('sys-type') === 'standard'},
+            {from: 'system-type', to: 'performance', condition: () => getSelection('sys-type') === 'custom'},
+            
+            // Connector check to results
+            {from: 'connector-check', to: 'result-conner', condition: () => getSelection('connector') === 'yes', result: true},
+            {from: 'connector-check', to: 'result-natty', condition: () => getSelection('connector') === 'no', result: true},
+            
+            // Performance to results
+            {from: 'performance', to: 'result-natty', condition: () => getSelection('perf') !== '', result: true},
+        ];
+        
+        // Draw connections
+        function drawConnections() {
+            const container = document.getElementById('treeContainer');
+            
+            connections.forEach((conn, index) => {
+                const fromEl = document.getElementById(conn.from);
+                const toEl = document.getElementById(conn.to);
+                
+                if (!fromEl || !toEl) return;
+                
+                const fromRect = fromEl.getBoundingClientRect();
+                const toRect = toEl.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                // Calculate positions relative to container
+                const x1 = fromRect.right - containerRect.left;
+                const y1 = fromRect.top + fromRect.height/2 - containerRect.top;
+                const x2 = toRect.left - containerRect.left;
+                const y2 = toRect.top + toRect.height/2 - containerRect.top;
+                
+                // Create line
+                const line = document.createElement('div');
+                line.className = 'connection';
+                if (conn.result) line.className += ' result-line';
+                line.id = `conn-${index}`;
+                
+                const length = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+                const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+                
+                line.style.left = x1 + 'px';
+                line.style.top = y1 + 'px';
+                line.style.width = length + 'px';
+                line.style.transform = `rotate(${angle}deg)`;
+                
+                container.appendChild(line);
+                
+                // Create arrow
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                if (conn.result) arrow.className += ' result-arrow';
+                arrow.id = `arrow-${index}`;
+                arrow.style.left = (x2 - 12) + 'px';
+                arrow.style.top = (y2 - 8) + 'px';
+                arrow.style.transform = `rotate(${angle}deg)`;
+                
+                container.appendChild(arrow);
+            });
+        }
+        
+        function getSelection(name) {
+            const selected = document.querySelector(`input[name="${name}"]:checked`);
+            return selected ? selected.value : '';
+        }
+        
+        function updatePath() {
+            // Clear all active states
+            document.querySelectorAll('.node, .connection, .arrow').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // First, disable all nodes except start
+            document.querySelectorAll('.node').forEach(node => {
+                if (node.id !== 'start') {
+                    node.classList.add('disabled');
+                }
+            });
+            
+            // Always highlight start
+            document.getElementById('start').classList.add('active');
+            
+            // Build path array
+            const path = [];
+            const startVal = getSelection('start');
+            if (startVal) {
+                path.push(startVal === 'data' ? '📊 DATA' : 
+                         startVal === 'system' ? '🔗 SYSTEMS' : '🔑 ACCESS');
+            }
+            
+            // Trace active path
+            let currentNode = 'start';
+            let visitedNodes = new Set(['start']);
+            
+            // Find and highlight active connections
+            connections.forEach((conn, index) => {
+                if (conn.condition && conn.condition()) {
+                    const fromNode = document.getElementById(conn.from);
+                    const toNode = document.getElementById(conn.to);
+                    
+                    if (fromNode && visitedNodes.has(conn.from)) {
+                        // Highlight connection
+                        const connEl = document.getElementById(`conn-${index}`);
+                        const arrowEl = document.getElementById(`arrow-${index}`);
+                        if (connEl) connEl.classList.add('active');
+                        if (arrowEl) arrowEl.classList.add('active');
+                        
+                        // Highlight node
+                        if (toNode) {
+                            toNode.classList.add('active');
+                            toNode.classList.remove('disabled');
+                            visitedNodes.add(conn.to);
+                            
+                            // Add to path
+                            if (conn.to.startsWith('data-flow')) {
+                                const val = getSelection('data-flow');
+                                if (val) path.push(val === 'pull' ? '🙋 PULL' : '📬 PUSH');
+                            } else if (conn.to.startsWith('pull-frequency')) {
+                                const val = getSelection('pull-freq');
+                                if (val) path.push(val === 'low' ? '🐌 LOW FREQ' : '⚡ HIGH FREQ');
+                            } else if (conn.to.startsWith('push-events')) {
+                                const val = getSelection('push-event');
+                                if (val) path.push(val === 'complete' ? '✅ COMPLETE' : '📈 PROGRESS');
+                            } else if (conn.to.startsWith('system-type')) {
+                                const val = getSelection('sys-type');
+                                if (val) path.push(val === 'standard' ? '📦 STANDARD' : '🛠️ CUSTOM');
+                            } else if (conn.to.startsWith('connector-check')) {
+                                const val = getSelection('connector');
+                                if (val) path.push(val === 'yes' ? '✅ EXISTS' : '❌ BUILD');
+                            } else if (conn.to.startsWith('performance')) {
+                                const val = getSelection('perf');
+                                if (val) path.push(val === 'critical' ? '🏎️ CRITICAL' : '🚗 STANDARD');
+                            } else if (conn.to.startsWith('result-')) {
+                                const resultName = conn.to.replace('result-', '').toUpperCase();
+                                path.push(`→ ${resultName}`);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update path display
+            const pathDisplay = document.getElementById('currentPath');
+            const pathContent = document.getElementById('pathDisplay');
+            
+            if (path.length > 0) {
+                pathDisplay.style.display = 'block';
+                pathContent.innerHTML = path.map(step => 
+                    `<span class="path-step">${step}</span>`
+                ).join('');
+            } else {
+                pathDisplay.style.display = 'none';
+            }
+            
+            // Update use case display
+            const useCasePanel = document.getElementById('useCasePanel');
+            const useCaseContent = document.getElementById('useCaseContent');
+            let activeResult = null;
+            
+            // Find active result node
+            document.querySelectorAll('.node.result.active').forEach(node => {
+                activeResult = node.id;
+            });
+            
+            if (activeResult && useCases[activeResult]) {
+                useCasePanel.style.display = 'block';
+                useCaseContent.innerHTML = useCases[activeResult].map(useCase => 
+                    `<div class="use-case">${useCase}</div>`
+                ).join('');
+            } else {
+                useCasePanel.style.display = 'none';
+            }
+        }
+        
+        // Reset tree function
+        function resetTree() {
+            // Clear all radio selections
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Update the path display
+            updatePath();
+        }
+        
+        // Add click handlers to nodes
+        function setupNodeClickHandlers() {
+            document.querySelectorAll('.node').forEach(node => {
+                node.addEventListener('click', function(e) {
+                    // If clicking on a node that's not in the current path and we have a complete path
+                    const isActive = this.classList.contains('active');
+                    const hasCompletePath = document.querySelector('.node.result.active') !== null;
+                    
+                    // Check if click is on a radio button or label
+                    const isRadioClick = e.target.type === 'radio' || e.target.tagName === 'LABEL' || e.target.closest('.toggle-option');
+                    
+                    if (!isActive && hasCompletePath && !isRadioClick) {
+                        // Reset the tree
+                        e.stopPropagation();
+                        resetTree();
+                    }
+                });
+            });
+        }
+        
+        // Initialize
+        window.onload = () => {
+            drawConnections();
+            updatePath();
+            setupNodeClickHandlers();
+        };
+        
+        // Redraw on window resize
+        window.onresize = () => {
+            // Clear existing connections
+            document.querySelectorAll('.connection, .arrow').forEach(el => el.remove());
+            drawConnections();
+            updatePath();
+        };
+    </script>
+</body>
+</html>

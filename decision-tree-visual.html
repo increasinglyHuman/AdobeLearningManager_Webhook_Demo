@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datopolis Integration Decision Tree - Visual Map</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            overflow-x: auto;
+        }
+        
+        .container {
+            min-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        
+        .tree-container {
+            position: relative;
+            min-height: 800px;
+        }
+        
+        /* Nodes */
+        .node {
+            position: absolute;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 15px;
+            width: 220px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .node.active {
+            border-color: #007bff;
+            background: #f0f8ff;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        .node.decision {
+            background: #fffbf0;
+        }
+        
+        .node.result {
+            background: #f0fff4;
+            border-color: #28a745;
+        }
+        
+        .node.result.active {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .node-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        /* Toggle Switches */
+        .toggle-group {
+            margin-top: 10px;
+        }
+        
+        .toggle-option {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-option:hover {
+            background: #f8f9fa;
+        }
+        
+        .toggle-option input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        .toggle-option label {
+            cursor: pointer;
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+        }
+        
+        /* Connections */
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: #ddd;
+            transition: all 0.3s ease;
+            transform-origin: left center;
+        }
+        
+        .connection.active {
+            background: #007bff;
+            height: 4px;
+            z-index: 5;
+        }
+        
+        .connection.result-line.active {
+            background: #28a745;
+        }
+        
+        /* Arrow heads */
+        .arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 6px 0 6px 10px;
+            border-color: transparent transparent transparent #ddd;
+            transition: all 0.3s ease;
+        }
+        
+        .arrow.active {
+            border-color: transparent transparent transparent #007bff;
+        }
+        
+        .arrow.result-arrow.active {
+            border-color: transparent transparent transparent #28a745;
+        }
+        
+        /* Character Results */
+        .character-icon {
+            width: 40px;
+            height: 40px;
+            filter: invert(1);
+            margin-bottom: 8px;
+        }
+        
+        .result-name {
+            font-weight: 700;
+            color: #28a745;
+            margin-bottom: 5px;
+        }
+        
+        .result-desc {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+        
+        /* Current Path Display */
+        .current-path {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 80%;
+            z-index: 100;
+        }
+        
+        .current-path h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+            font-size: 16px;
+        }
+        
+        .path-step {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            margin: 0 5px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+        
+        /* Legend */
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 13px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏙️ Datopolis Integration Decision Tree - Complete Map</h1>
+        <p class="instructions">
+            Click the toggle switches to explore different paths through the decision tree. Watch as your chosen path lights up!
+        </p>
+        
+        <div class="tree-container" id="treeContainer">
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #fffbf0; border-color: #ddd;"></div>
+                    <span>Decision Point</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #f0fff4; border-color: #28a745;"></div>
+                    <span>Solution</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #f0f8ff; border-color: #007bff;"></div>
+                    <span>Active Path</span>
+                </div>
+            </div>
+            
+            <!-- Start Node -->
+            <div class="node decision active" id="start" style="top: 50px; left: 50px;">
+                <div class="node-title">🏁 What's your integration need?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="start" id="start-data" value="data" onchange="updatePath()">
+                        <label for="start-data">📊 Work with data</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="start" id="start-system" value="system" onchange="updatePath()">
+                        <label for="start-system">🔗 Connect systems</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="start" id="start-access" value="access" onchange="updatePath()">
+                        <label for="start-access">🔑 Need access</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Branch -->
+            <div class="node decision" id="data-flow" style="top: 50px; left: 350px;">
+                <div class="node-title">📊 How to receive data?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="data-flow" id="flow-pull" value="pull" onchange="updatePath()">
+                        <label for="flow-pull">🙋 I'll request it</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="data-flow" id="flow-push" value="push" onchange="updatePath()">
+                        <label for="flow-push">📬 Push to me</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pull Branch -->
+            <div class="node decision" id="pull-frequency" style="top: 50px; left: 650px;">
+                <div class="node-title">⏰ Request frequency?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="pull-freq" id="freq-low" value="low" onchange="updatePath()">
+                        <label for="freq-low">🐌 Occasional</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="pull-freq" id="freq-high" value="high" onchange="updatePath()">
+                        <label for="freq-high">⚡ Very frequent</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Push Branch -->
+            <div class="node decision" id="push-events" style="top: 200px; left: 650px;">
+                <div class="node-title">📬 Which events?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="push-event" id="event-complete" value="complete" onchange="updatePath()">
+                        <label for="event-complete">✅ Completions</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="push-event" id="event-progress" value="progress" onchange="updatePath()">
+                        <label for="event-progress">📈 Progress</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Branch -->
+            <div class="node decision" id="system-type" style="top: 350px; left: 350px;">
+                <div class="node-title">🔗 System type?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="sys-type" id="sys-standard" value="standard" onchange="updatePath()">
+                        <label for="sys-standard">📦 Standard (CRM, etc)</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="sys-type" id="sys-custom" value="custom" onchange="updatePath()">
+                        <label for="sys-custom">🛠️ Custom system</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Connector Check -->
+            <div class="node decision" id="connector-check" style="top: 350px; left: 650px;">
+                <div class="node-title">🔍 Pre-built connector?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="connector" id="conn-yes" value="yes" onchange="updatePath()">
+                        <label for="conn-yes">✅ Yes</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="connector" id="conn-no" value="no" onchange="updatePath()">
+                        <label for="conn-no">❌ No</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Branch -->
+            <div class="node decision" id="performance" style="top: 500px; left: 650px;">
+                <div class="node-title">🚀 Performance needs?</div>
+                <div class="toggle-group">
+                    <div class="toggle-option">
+                        <input type="radio" name="perf" id="perf-critical" value="critical" onchange="updatePath()">
+                        <label for="perf-critical">🏎️ Critical</label>
+                    </div>
+                    <div class="toggle-option">
+                        <input type="radio" name="perf" id="perf-standard" value="standard" onchange="updatePath()">
+                        <label for="perf-standard">🚗 Standard</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div class="node result" id="result-appy" style="top: 50px; left: 950px;">
+                <img src="../ALM-Kawaii-Quiz/icons/gear.svg" class="character-icon" alt="Appy">
+                <div class="result-name">Appy API</div>
+                <div class="result-desc">Request data when you need it</div>
+            </div>
+            
+            <div class="node result" id="result-webby" style="top: 200px; left: 950px;">
+                <img src="../ALM-Kawaii-Quiz/icons/lightbulb.svg" class="character-icon" alt="Webby">
+                <div class="result-name">Webby Webhook</div>
+                <div class="result-desc">Get instant push notifications</div>
+            </div>
+            
+            <div class="node result" id="result-natty" style="top: 350px; left: 950px;">
+                <img src="../ALM-Kawaii-Quiz/icons/atomic.svg" class="character-icon" alt="Natty">
+                <div class="result-name">Natty Native-Extension</div>
+                <div class="result-desc">Custom high-performance tools</div>
+            </div>
+            
+            <div class="node result" id="result-conner" style="top: 500px; left: 950px;">
+                <img src="../ALM-Kawaii-Quiz/icons/infinity.svg" class="character-icon" alt="Conner">
+                <div class="result-name">Conner Connector</div>
+                <div class="result-desc">Pre-built system integrations</div>
+            </div>
+            
+            <div class="node result" id="result-appleberry" style="top: 650px; left: 350px;">
+                <img src="../ALM-Kawaii-Quiz/icons/bento.svg" class="character-icon" alt="Appleberry">
+                <div class="result-name">Appleberry Application</div>
+                <div class="result-desc">Get API keys and access</div>
+            </div>
+            
+            <!-- Connections will be drawn dynamically -->
+        </div>
+        
+        <!-- Current Path Display -->
+        <div class="current-path" id="currentPath" style="display: none;">
+            <h3>Your Decision Path:</h3>
+            <div id="pathDisplay"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Connection definitions
+        const connections = [
+            // Start to branches
+            {from: 'start', to: 'data-flow', condition: () => getSelection('start') === 'data'},
+            {from: 'start', to: 'system-type', condition: () => getSelection('start') === 'system'},
+            {from: 'start', to: 'result-appleberry', condition: () => getSelection('start') === 'access', result: true},
+            
+            // Data flow branches
+            {from: 'data-flow', to: 'pull-frequency', condition: () => getSelection('data-flow') === 'pull'},
+            {from: 'data-flow', to: 'push-events', condition: () => getSelection('data-flow') === 'push'},
+            
+            // Pull frequency to results
+            {from: 'pull-frequency', to: 'result-appy', condition: () => getSelection('pull-freq') === 'low', result: true},
+            {from: 'pull-frequency', to: 'result-webby', condition: () => getSelection('pull-freq') === 'high', result: true},
+            
+            // Push events to result
+            {from: 'push-events', to: 'result-webby', condition: () => getSelection('push-event') !== '', result: true},
+            
+            // System branches
+            {from: 'system-type', to: 'connector-check', condition: () => getSelection('sys-type') === 'standard'},
+            {from: 'system-type', to: 'performance', condition: () => getSelection('sys-type') === 'custom'},
+            
+            // Connector check to results
+            {from: 'connector-check', to: 'result-conner', condition: () => getSelection('connector') === 'yes', result: true},
+            {from: 'connector-check', to: 'result-natty', condition: () => getSelection('connector') === 'no', result: true},
+            
+            // Performance to results
+            {from: 'performance', to: 'result-natty', condition: () => getSelection('perf') !== '', result: true},
+        ];
+        
+        // Draw connections
+        function drawConnections() {
+            const container = document.getElementById('treeContainer');
+            
+            connections.forEach((conn, index) => {
+                const fromEl = document.getElementById(conn.from);
+                const toEl = document.getElementById(conn.to);
+                
+                if (!fromEl || !toEl) return;
+                
+                const fromRect = fromEl.getBoundingClientRect();
+                const toRect = toEl.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                // Calculate positions relative to container
+                const x1 = fromRect.right - containerRect.left;
+                const y1 = fromRect.top + fromRect.height/2 - containerRect.top;
+                const x2 = toRect.left - containerRect.left;
+                const y2 = toRect.top + toRect.height/2 - containerRect.top;
+                
+                // Create line
+                const line = document.createElement('div');
+                line.className = 'connection';
+                if (conn.result) line.className += ' result-line';
+                line.id = `conn-${index}`;
+                
+                const length = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+                const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+                
+                line.style.left = x1 + 'px';
+                line.style.top = y1 + 'px';
+                line.style.width = length + 'px';
+                line.style.transform = `rotate(${angle}deg)`;
+                
+                container.appendChild(line);
+                
+                // Create arrow
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                if (conn.result) arrow.className += ' result-arrow';
+                arrow.id = `arrow-${index}`;
+                arrow.style.left = (x2 - 10) + 'px';
+                arrow.style.top = (y2 - 6) + 'px';
+                arrow.style.transform = `rotate(${angle}deg)`;
+                
+                container.appendChild(arrow);
+            });
+        }
+        
+        function getSelection(name) {
+            const selected = document.querySelector(`input[name="${name}"]:checked`);
+            return selected ? selected.value : '';
+        }
+        
+        function updatePath() {
+            // Clear all active states
+            document.querySelectorAll('.node, .connection, .arrow').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Always highlight start
+            document.getElementById('start').classList.add('active');
+            
+            // Build path array
+            const path = [];
+            const startVal = getSelection('start');
+            if (startVal) {
+                path.push(startVal === 'data' ? '📊 Work with data' : 
+                         startVal === 'system' ? '🔗 Connect systems' : '🔑 Need access');
+            }
+            
+            // Trace active path
+            let currentNode = 'start';
+            let visitedNodes = new Set(['start']);
+            
+            // Find and highlight active connections
+            connections.forEach((conn, index) => {
+                if (conn.condition && conn.condition()) {
+                    const fromNode = document.getElementById(conn.from);
+                    const toNode = document.getElementById(conn.to);
+                    
+                    if (fromNode && visitedNodes.has(conn.from)) {
+                        // Highlight connection
+                        const connEl = document.getElementById(`conn-${index}`);
+                        const arrowEl = document.getElementById(`arrow-${index}`);
+                        if (connEl) connEl.classList.add('active');
+                        if (arrowEl) arrowEl.classList.add('active');
+                        
+                        // Highlight node
+                        if (toNode) {
+                            toNode.classList.add('active');
+                            visitedNodes.add(conn.to);
+                            
+                            // Add to path
+                            if (conn.to.startsWith('data-flow')) {
+                                const val = getSelection('data-flow');
+                                if (val) path.push(val === 'pull' ? '🙋 Request data' : '📬 Push data');
+                            } else if (conn.to.startsWith('pull-frequency')) {
+                                const val = getSelection('pull-freq');
+                                if (val) path.push(val === 'low' ? '🐌 Occasional' : '⚡ Frequent');
+                            } else if (conn.to.startsWith('push-events')) {
+                                const val = getSelection('push-event');
+                                if (val) path.push(val === 'complete' ? '✅ Completions' : '📈 Progress');
+                            } else if (conn.to.startsWith('system-type')) {
+                                const val = getSelection('sys-type');
+                                if (val) path.push(val === 'standard' ? '📦 Standard' : '🛠️ Custom');
+                            } else if (conn.to.startsWith('connector-check')) {
+                                const val = getSelection('connector');
+                                if (val) path.push(val === 'yes' ? '✅ Has connector' : '❌ No connector');
+                            } else if (conn.to.startsWith('performance')) {
+                                const val = getSelection('perf');
+                                if (val) path.push(val === 'critical' ? '🏎️ Critical' : '🚗 Standard');
+                            } else if (conn.to.startsWith('result-')) {
+                                const resultName = conn.to.replace('result-', '');
+                                path.push(`✨ ${resultName.charAt(0).toUpperCase() + resultName.slice(1)}`);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update path display
+            const pathDisplay = document.getElementById('currentPath');
+            const pathContent = document.getElementById('pathDisplay');
+            
+            if (path.length > 0) {
+                pathDisplay.style.display = 'block';
+                pathContent.innerHTML = path.map(step => 
+                    `<span class="path-step">${step}</span>`
+                ).join(' → ');
+            } else {
+                pathDisplay.style.display = 'none';
+            }
+        }
+        
+        // Initialize
+        window.onload = () => {
+            drawConnections();
+            updatePath();
+        };
+        
+        // Redraw on window resize
+        window.onresize = () => {
+            // Clear existing connections
+            document.querySelectorAll('.connection, .arrow').forEach(el => el.remove());
+            drawConnections();
+            updatePath();
+        };
+    </script>
+</body>
+</html>
